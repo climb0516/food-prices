@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<!-- Created by 青云 on 2026/10/21. -->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="referrer" content="no-referrer">
+  <title>菜价物价 · 猪肉 鸡蛋 蔬菜 CPI</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥬</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080a08;
+      --panel: rgba(20,26,20,0.82);
+      --panel-2: rgba(255,255,255,0.03);
+      --hover: rgba(255,255,255,0.045);
+      --line: rgba(255,255,255,0.07);
+      --line-2: rgba(255,255,255,0.14);
+      --grid: rgba(255,255,255,0.06);
+      --text-1: #eef3ec;
+      --text-2: #aab5a6;
+      --text-3: #6f7a6b;
+      --accent: #4ade80;
+      --grad: linear-gradient(120deg, #4ade80 0%, #a3e635 50%, #facc15 100%);
+      --grid-dot: rgba(255,255,255,0.045);
+      --glow-1: rgba(74,222,128,0.11);
+      --glow-2: rgba(250,204,21,0.07);
+      --up: #f05252;          /* 涨：红（国内习惯），始终配 ▲ */
+      --down: #22c55e;        /* 跌：绿，始终配 ▼ */
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;   /* 图表分类色（深色模式色阶） */
+      --ok: #22c55e;
+      --err: #ef4444;
+      --kbd-bg: rgba(255,255,255,0.06);
+    }
+    :root[data-theme="light"] {
+      --bg: #f8faf7;
+      --panel: rgba(255,255,255,0.93);
+      --panel-2: rgba(10,40,10,0.025);
+      --hover: rgba(10,40,10,0.04);
+      --line: rgba(10,40,10,0.08);
+      --line-2: rgba(10,40,10,0.16);
+      --grid: rgba(10,40,10,0.07);
+      --text-1: #121a10;
+      --text-2: #4e5a4a;
+      --text-3: #8b9686;
+      --accent: #16a34a;
+      --grid-dot: rgba(10,40,10,0.06);
+      --glow-1: rgba(74,222,128,0.09);
+      --glow-2: rgba(250,204,21,0.06);
+      --up: #dc2626;
+      --down: #15803d;
+      --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+      --kbd-bg: rgba(10,40,10,0.05);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text-1);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; min-height: 100vh;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background:
+        radial-gradient(600px 400px at 15% -5%, var(--glow-1), transparent 70%),
+        radial-gradient(700px 500px at 95% 0%, var(--glow-2), transparent 70%),
+        radial-gradient(circle, var(--grid-dot) 1px, transparent 1px) 0 0 / 22px 22px;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; color: inherit; }
+
+    /* ── Top bar ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 30;
+      background: color-mix(in srgb, var(--bg) 72%, transparent);
+      backdrop-filter: saturate(180%) blur(18px); -webkit-backdrop-filter: saturate(180%) blur(18px);
+      border-bottom: 1px solid var(--line);
+    }
+    .topbar-inner { max-width: 1400px; margin: 0 auto; padding: 0 24px; height: 60px; display: flex; align-items: center; gap: 20px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 17px; letter-spacing: -0.02em; white-space: nowrap; }
+    .logo-mark { width: 28px; height: 28px; border-radius: 8px; background: var(--grad); display: grid; place-items: center; font-size: 15px; box-shadow: 0 0 20px var(--glow-1); }
+    .logo small { font-weight: 500; font-size: 12px; color: var(--text-3); letter-spacing: 0; }
+    .search {
+      flex: 1; max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: 8px;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; height: 36px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow-1); }
+    .search svg { color: var(--text-3); flex: none; }
+    .search input { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--text-1); font: inherit; font-size: 13.5px; }
+    .search input::placeholder { color: var(--text-3); }
+    kbd { font-family: inherit; font-size: 11px; color: var(--text-3); background: var(--kbd-bg); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+    .top-right { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+    .updated { font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 6px; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px rgba(34,197,94,0.2); animation: pulse 2s infinite; }
+    @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); } }
+    .icon-btn { width: 34px; height: 34px; border-radius: 9px; background: var(--panel); border: 1px solid var(--line); cursor: pointer; display: grid; place-items: center; color: var(--text-2); flex: none; }
+    .icon-btn:hover { color: var(--text-1); border-color: var(--line-2); }
+    .icon-btn.spin svg { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Layout ── */
+    .layout { max-width: 1400px; margin: 0 auto; padding: 24px 24px 64px; display: grid; grid-template-columns: 180px minmax(0, 1fr) 290px; gap: 24px; align-items: start; }
+    .side { position: sticky; top: 84px; }
+    .side-title { font-size: 11.5px; color: var(--text-3); padding: 0 10px; margin: 4px 0 8px; letter-spacing: .04em; }
+    .nav-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; border: none; background: none; cursor: pointer; text-align: left; color: var(--text-2); font-size: 13.5px; position: relative; }
+    .nav-item:hover { background: var(--hover); color: var(--text-1); }
+    .nav-item.active { background: var(--panel); color: var(--text-1); box-shadow: inset 0 0 0 1px var(--line); }
+    .nav-item.active::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--grad); }
+
+    .main-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .main-head h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+    .main-head h1 span { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .main-head p { font-size: 12.5px; color: var(--text-3); margin-top: 4px; }
+    .tabs { display: flex; gap: 2px; padding: 3px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; flex-wrap: wrap; }
+    .tab { padding: 5px 11px; border-radius: 7px; border: none; background: none; cursor: pointer; font-size: 13px; color: var(--text-3); white-space: nowrap; }
+    .tab:hover { color: var(--text-1); }
+    .tab.active { background: var(--hover); color: var(--text-1); box-shadow: inset 0 0 0 1px var(--line-2); }
+
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+    .muted { color: var(--text-3); }
+    .empty { text-align: center; padding: 40px 0; color: var(--text-3); }
+    .loading { padding: 80px 0; text-align: center; color: var(--text-3); }
+    .section-title { font-size: 13px; color: var(--text-3); margin: 26px 0 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .section-title:first-child { margin-top: 0; }
+    .section-title b { color: var(--text-1); font-size: 15px; }
+    .note { font-size: 12px; color: var(--text-3); margin-top: 10px; line-height: 1.6; }
+    .num { font-variant-numeric: tabular-nums; }
+    .up { color: var(--up); }
+    .down { color: var(--down); }
+
+    /* ── KPI ── */
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 8px; }
+    .kpi { padding: 14px 16px; }
+    .kpi .k { font-size: 12px; color: var(--text-3); }
+    .kpi .v { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin: 2px 0; font-variant-numeric: tabular-nums; }
+    .kpi .v small { font-size: 12px; font-weight: 500; color: var(--text-3); margin-left: 3px; }
+    .kpi .s { font-size: 12.5px; color: var(--text-2); display: flex; gap: 10px; flex-wrap: wrap; }
+    .kpi svg { display: block; margin-top: 6px; width: 100%; }   /* 跟随卡片宽度，手机两列时不撑破 */
+
+    /* ── Price table ── */
+    .ptable { width: 100%; border-collapse: collapse; }
+    .ptable th { font-size: 12px; font-weight: 500; color: var(--text-3); text-align: right; padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    .ptable th:first-child { text-align: left; }
+    .ptable td { padding: 9px 14px; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ptable td:first-child { text-align: left; }
+    .ptable tr.row { cursor: pointer; }
+    .ptable tr.row:hover td { background: var(--hover); }
+    .ptable tr.row.open td { background: var(--hover); }
+    .ptable tr.grp td { font-size: 12px; color: var(--text-3); background: var(--panel-2); padding: 6px 14px; text-align: left; }
+    .ptable tr:last-child td { border-bottom: none; }
+    .ptable .price { font-weight: 700; font-size: 14.5px; }
+    .ptable .spark { width: 110px; }
+    .ptable tr.detail td { padding: 4px 14px 14px; cursor: default; text-align: left; white-space: normal; }
+    .stale { font-size: 11px; color: var(--text-3); margin-left: 4px; }
+
+    /* ── Charts ── */
+    .chart { position: relative; }
+    .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .chart .tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line-2); border-radius: 9px; padding: 7px 10px; font-size: 12px; white-space: nowrap; box-shadow: 0 6px 20px rgba(0,0,0,.25); opacity: 0; transition: opacity .1s; z-index: 5; }
+    .chart .tip b { display: block; font-size: 12px; color: var(--text-3); font-weight: 500; margin-bottom: 2px; }
+    .chart .tip .r { display: flex; align-items: center; gap: 6px; color: var(--text-1); }
+    .chart .tip i { width: 10px; height: 2px; border-radius: 1px; display: inline-block; }
+    .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-2); margin-bottom: 8px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 14px; height: 2px; border-radius: 1px; display: inline-block; }
+    .chart-card { padding: 16px 16px 10px; }
+    .chart-meta { display: flex; gap: 18px; font-size: 12.5px; color: var(--text-2); flex-wrap: wrap; margin-bottom: 8px; }
+    .chart-meta b { color: var(--text-1); font-variant-numeric: tabular-nums; }
+
+    /* ── Rank / index ── */
+    .two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .rank-row { display: flex; align-items: baseline; gap: 10px; padding: 8px 16px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+    .rank-row:last-child { border-bottom: none; }
+    .rank-row .n { width: 18px; color: var(--text-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .rank-row .l { flex: 1; min-width: 0; }
+    .rank-row .p { color: var(--text-2); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+    .rank-row .c { width: 64px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .idx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+    .idx { padding: 12px 14px; }
+    .idx .k { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .idx .v { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .idx .s { font-size: 12px; font-variant-numeric: tabular-nums; }
+
+    /* ── CPI ── */
+    .bars { display: flex; flex-direction: column; gap: 7px; padding: 14px 16px; }
+    .bar-row { display: grid; grid-template-columns: 92px minmax(0, 1fr) 62px; align-items: center; gap: 10px; font-size: 13px; }
+    .bar-row .lab { color: var(--text-2); white-space: nowrap; }
+    .bar-row .track { position: relative; height: 14px; }
+    .bar-row .track::before { content: ''; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line-2); }
+    .bar-row .fill { position: absolute; top: 2px; height: 10px; border-radius: 4px; }
+    .bar-row .val { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .say { padding: 14px 16px; font-size: 13.5px; color: var(--text-2); line-height: 1.8; }
+    .say b { color: var(--text-1); }
+    .ctable { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .ctable th, .ctable td { padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .ctable th:first-child, .ctable td:first-child { text-align: left; }
+    .ctable th { color: var(--text-3); font-weight: 500; }
+    .scroll-x { overflow-x: auto; }
+    .linkbtn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12.5px; }
+
+    /* ── Aside ── */
+    .aside { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 14px; }
+    .widget { padding: 14px 16px; }
+    .widget h3 { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+    .w-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+    .w-row:last-child { border-bottom: none; }
+    .w-row .l { color: var(--text-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .w-row .r { color: var(--text-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .st-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: var(--ok); }
+    .st-dot.bad { background: var(--err); }
+    .st-dot.stale { background: #f59e0b; }
+    .w-note { font-size: 12px; color: var(--text-3); line-height: 1.65; }
+
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 160px minmax(0, 1fr); }
+      .aside { display: none; }
+    }
+    @media (max-width: 860px) {
+      .topbar-inner { padding: 0 16px; gap: 10px; }
+      .logo small, .updated, kbd, .top-right a.icon-btn { display: none; }
+      .logo { font-size: 15px; }
+      .search { min-width: 0; flex: 1 1 0; }
+      .layout { grid-template-columns: minmax(0, 1fr); padding: 16px 16px 48px; gap: 16px; }
+      .side { position: static; }
+      .side-title { display: none; }
+      .side nav { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+      .nav-item { width: auto; white-space: nowrap; }
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .two { grid-template-columns: minmax(0, 1fr); }
+      .ptable th, .ptable td { padding: 8px 8px; }
+      .ptable .hide-m { display: none; }
+      .ptable .spark { width: 72px; }
+      .bar-row { grid-template-columns: 70px minmax(0, 1fr) 54px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="logo"><div class="logo-mark">🥬</div>菜价物价 <small>批发价 · 全国指数 · CPI</small></div>
+      <label class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="搜索品种，如 猪肉、鸡蛋、西红柿…" autocomplete="off">
+        <kbd>⌘K</kbd>
+      </label>
+      <div class="top-right">
+        <div class="updated"><i class="live-dot"></i><span id="updated">读取中…</span></div>
+        <button class="icon-btn" id="reload" title="重新读取数据"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
+        <a class="icon-btn" href="https://github.com/climb0516/food-prices/actions/workflows/scrape.yml" target="_blank" rel="noopener" title="到 GitHub Actions 手动触发抓取">⚡</a>
+        <button class="icon-btn" id="theme" title="切换深浅色">☾</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="side">
+      <div class="side-title">视图</div>
+      <nav id="nav"></nav>
+    </aside>
+    <main id="main"><div class="loading">加载中…</div></main>
+    <aside class="aside" id="aside"></aside>
+  </div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('fp:' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('fp:' + k, JSON.stringify(v)); } catch {} },
+};
+const GROUPS = ['肉', '蛋', '菜', '果', '鱼虾'];
+const CPI_NAME = { cpi: 'CPI 总体', food: '食品', core: '核心 CPI', pork: '猪肉', veg: '鲜菜', egg: '蛋类', fruit: '鲜果', beef: '牛肉', mutton: '羊肉', aquatic: '水产品', grain: '粮食', oil: '食用油', meat: '畜肉类' };
+const CPI_LINES = [['cpi', 'var(--s1)'], ['pork', 'var(--s2)'], ['veg', 'var(--s3)'], ['egg', 'var(--s4)']];   // 固定顺序，颜色跟着品类走
+
+let D = null;
+const state = { view: store.get('view', 'home'), q: '', range: store.get('range', 90), open: null, cpiTable: false };
+
+// ── 工具 ──
+const pct = v => v == null || !isFinite(v) ? '—' : `${v > 0 ? '▲' : v < 0 ? '▼' : ''}${Math.abs(v).toFixed(1)}%`;
+const cls = v => v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'muted';
+const yuan = v => v == null ? '—' : v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2);
+const md = iso => `${+iso.slice(5, 7)}/${+iso.slice(8, 10)}`;
+const ym = m => `${m.slice(2, 4)}.${+m.slice(5)}`;
+function ago(t) {
+  const s = (Date.now() - new Date(t)) / 1000;
+  if (s < 3600) return Math.max(1, Math.round(s / 60)) + ' 分钟前';
+  if (s < 86400) return Math.round(s / 3600) + ' 小时前';
+  return Math.round(s / 86400) + ' 天前';
+}
+const addDays = (iso, n) => { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+
+// 单品：最新价、N 天前的价（取不晚于该日的最近一个报价）
+function series(id) { return Object.entries(D.xinfadi[id] || {}); }
+function stat(id) {
+  const s = series(id);
+  if (!s.length) return null;
+  const [lastDay, last] = s.at(-1);
+  const before = n => { const cut = addDays(lastDay, -n); for (let i = s.length - 1; i >= 0; i--) if (s[i][0] <= cut) return s[i][1]; return null; };
+  const chg = n => { const b = before(n); return b ? (last / b - 1) * 100 : null; };
+  const vals = s.slice(-90).map(x => x[1]);
+  return { last, lastDay, d1: chg(1), d7: chg(7), d30: chg(30), min: Math.min(...vals), max: Math.max(...vals), avg: vals.reduce((a, b) => a + b, 0) / vals.length };
+}
+
+// ── 图表（纯 SVG） ──
+const CHARTS = {};
+let chartSeq = 0;
+function sparkline(points, w = 110, h = 28, color = 'var(--text-2)') {
+  if (points.length < 2) return '';
+  const ys = points.map(p => p[1]), lo = Math.min(...ys), hi = Math.max(...ys), span = hi - lo || 1;
+  const d = points.map((p, i) => `${i ? 'L' : 'M'}${(i / (points.length - 1) * (w - 4) + 2).toFixed(1)},${(h - 3 - (p[1] - lo) / span * (h - 6)).toFixed(1)}`).join('');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+}
+// lines: [{name, color, points:[[xLabel, y]]}]，所有线共用同一组 x；fmt 格式化 y；zero 是否画 0 线
+function lineChart(lines, { height = 240, fmt = v => v, zero = false, unit = '', xfmt = x => x } = {}) {
+  const id = 'c' + (++chartSeq);
+  const W = 720, H = height, L = 46, R = 16, T = 12, B = 26;
+  const xs = lines[0].points.map(p => p[0]);
+  const all = lines.flatMap(l => l.points.map(p => p[1])).filter(v => v != null);
+  let lo = Math.min(...all), hi = Math.max(...all);
+  if (zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+  const pad = (hi - lo) * 0.08 || 1; lo -= pad; hi += pad;
+  const x = i => L + (xs.length < 2 ? 0 : i / (xs.length - 1) * (W - L - R));
+  const y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const ticks = 4, grid = Array.from({ length: ticks + 1 }, (_, i) => lo + (hi - lo) * i / ticks);
+  const step = Math.max(1, Math.ceil(xs.length / 6));
+  const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(lines.map(l => l.name).join('、'))}走势">
+    ${grid.map(g => `<line x1="${L}" x2="${W - R}" y1="${y(g).toFixed(1)}" y2="${y(g).toFixed(1)}" stroke="var(--grid)" stroke-width="1"/>
+      <text x="${L - 8}" y="${(y(g) + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--text-3)">${esc(fmt(g))}</text>`).join('')}
+    ${zero && lo < 0 && hi > 0 ? `<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line-2)" stroke-width="1"/>` : ''}
+    ${xs.map((v, i) => i % step === 0 || i === xs.length - 1 ? `<text x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === xs.length - 1 ? 'end' : 'middle'}" font-size="11" fill="var(--text-3)">${esc(xfmt(v))}</text>` : '').join('')}
+    ${lines.map(l => {
+      let d = '', pen = false;
+      l.points.forEach((p, i) => { if (p[1] == null) { pen = false; return; } d += `${pen ? 'L' : 'M'}${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`; pen = true; });
+      return `<path d="${d}" fill="none" stroke="${l.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    }).join('')}
+    <line class="xh" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--text-3)" stroke-width="1" stroke-dasharray="3 3" opacity="0"/>
+    ${lines.map((l, k) => `<circle class="dot" data-k="${k}" r="4" fill="${l.color}" stroke="var(--bg)" stroke-width="2" opacity="0"/>`).join('')}
+    <rect class="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/>
+  </svg>`;
+  CHARTS[id] = { lines, xs, x, y, W, fmt, unit, xfmt };
+  return `<div class="chart" data-chart="${id}">${svg}<div class="tip"></div></div>`;
+}
+// 悬停：十字线 + 提示框（事件委托）
+document.addEventListener('pointermove', e => {
+  const box = e.target.closest?.('.chart');
+  document.querySelectorAll('.chart').forEach(c => { if (c !== box) hideTip(c); });
+  if (!box) return;
+  const c = CHARTS[box.dataset.chart]; if (!c) return;
+  const svg = box.querySelector('svg'), r = svg.getBoundingClientRect(), sx = (e.clientX - r.left) / r.width * c.W;
+  let best = 0, bd = Infinity;
+  c.xs.forEach((_, i) => { const d = Math.abs(c.x(i) - sx); if (d < bd) { bd = d; best = i; } });
+  const px = c.x(best);
+  const xh = svg.querySelector('.xh'); xh.setAttribute('x1', px); xh.setAttribute('x2', px); xh.setAttribute('opacity', 1);
+  svg.querySelectorAll('.dot').forEach(dot => {
+    const v = c.lines[dot.dataset.k].points[best]?.[1];
+    if (v == null) { dot.setAttribute('opacity', 0); return; }
+    dot.setAttribute('cx', px); dot.setAttribute('cy', c.y(v)); dot.setAttribute('opacity', 1);
+  });
+  const tip = box.querySelector('.tip');
+  tip.innerHTML = `<b>${esc(c.xfmt(c.xs[best], true))}</b>${c.lines.map(l => { const v = l.points[best]?.[1]; return v == null ? '' : `<div class="r"><i style="background:${l.color}"></i>${esc(l.name)} <span class="num">${esc(c.fmt(v, true))}${c.unit}</span></div>`; }).join('')}`;
+  tip.style.opacity = 1;
+  const bx = box.getBoundingClientRect(), left = px / c.W * r.width;
+  tip.style.left = Math.min(Math.max(0, left + 12), bx.width - tip.offsetWidth) + 'px';
+  tip.style.top = '6px';
+});
+function hideTip(box) {
+  box.querySelector('.tip') && (box.querySelector('.tip').style.opacity = 0);
+  box.querySelectorAll('.xh,.dot').forEach(n => n.setAttribute('opacity', 0));
+}
+
+// ── 视图：概览 ──
+function kpi(id, label) {
+  const s = stat(id); if (!s) return '';
+  const pts = series(id).slice(-30);
+  return `<div class="card kpi"><div class="k">${label} · 批发价</div><div class="v">${yuan(s.last)}<small>元/斤</small></div>
+    <div class="s"><span class="${cls(s.d7)}">周 ${pct(s.d7)}</span><span class="${cls(s.d30)}">月 ${pct(s.d30)}</span></div>${sparkline(pts, 200, 30)}</div>`;
+}
+function viewHome() {
+  const months = Object.keys(D.cpi), m = months.at(-1), c = D.cpi[m] || {};
+  const basket = D.moa_index_today.find(x => x.name.includes('菜篮子'));
+  const movers = D.basket.map(b => ({ b, s: stat(b.id) })).filter(x => x.s && x.s.d7 != null).sort((a, b) => b.s.d7 - a.s.d7);
+  return `<div class="main-head"><div><h1>今天<span>菜价</span>怎么样</h1><p>北京新发地批发价 · 农业农村部全国批发价格指数 · 国家统计局 CPI</p></div></div>
+    <div class="kpis">
+      ${kpi('pork_lean', '猪肉（瘦）')}${kpi('egg', '鸡蛋')}${kpi('cabbage', '大白菜')}
+      <div class="card kpi"><div class="k">${m ? `${+m.slice(5)} 月 CPI 同比` : 'CPI'}</div><div class="v ${cls(c.cpi?.yoy)}">${c.cpi ? (c.cpi.yoy > 0 ? '+' : '') + c.cpi.yoy.toFixed(1) + '%' : '—'}</div>
+        <div class="s"><span>食品 <b class="${cls(c.food?.yoy)}">${pct(c.food?.yoy)}</b></span>${basket ? `<span>菜篮子指数 ${basket.value.toFixed(2)}</span>` : ''}</div>
+        ${sparkline(months.slice(-24).map(k => [k, D.cpi[k].cpi?.yoy]).filter(p => p[1] != null), 200, 30)}</div>
+    </div>
+    <div class="section-title"><b>这周涨得最多</b><span>新发地，和 7 天前比</span></div>
+    <div class="two">
+      <div class="card">${movers.slice(0, 5).map((x, i) => moverRow(x, i)).join('')}</div>
+      <div class="card">${movers.slice(-5).reverse().map((x, i) => moverRow(x, i)).join('')}</div>
+    </div>
+    <p class="note">左：涨幅前 5；右：跌幅前 5。批发价一般比超市零售价低三到五成，看涨跌趋势更有参考价值。</p>
+    ${cpiSay(m, c)}`;
+}
+function moverRow(x, i) {
+  return `<div class="rank-row" style="cursor:pointer" data-open="${x.b.id}"><span class="n">${i + 1}</span><span class="l">${esc(x.b.name)}</span>
+    <span class="p">${yuan(x.s.last)} 元/斤</span><span class="c ${cls(x.s.d7)}">${pct(x.s.d7)}</span></div>`;
+}
+function cpiSay(m, c) {
+  if (!m || !c.cpi) return '';
+  const part = (k, n) => c[k] ? `${n}${c[k].yoy > 0 ? '贵' : '便宜'}了 <b class="${cls(c[k].yoy)}">${Math.abs(c[k].yoy).toFixed(1)}%</b>` : '';
+  const items = [part('pork', '猪肉'), part('egg', '鸡蛋'), part('veg', '鲜菜'), part('fruit', '鲜果'), part('beef', '牛肉')].filter(Boolean);
+  return `<div class="section-title"><b>一句话看 CPI</b><span>${m.slice(0, 4)} 年 ${+m.slice(5)} 月，和去年同月比</span></div>
+    <div class="card say">整体物价${c.cpi.yoy >= 0 ? '上涨' : '下降'} <b>${Math.abs(c.cpi.yoy).toFixed(1)}%</b>，其中食品${c.food?.yoy >= 0 ? '上涨' : '下降'} <b>${Math.abs(c.food?.yoy ?? 0).toFixed(1)}%</b>。
+      ${items.join('，')}。<a class="linkbtn" data-go="cpi">看 CPI 走势 →</a></div>`;
+}
+
+// ── 视图：今日菜价 ──
+function priceDetail(b) {
+  const pts = series(b.id).slice(-state.range), s = stat(b.id);
+  if (pts.length < 2) return '<div class="muted">数据不足</div>';
+  return `<div class="chart-meta"><span>${state.range} 天最高 <b>${yuan(Math.max(...pts.map(p => p[1])))}</b></span><span>最低 <b>${yuan(Math.min(...pts.map(p => p[1])))}</b></span>
+      <span>平均 <b>${yuan(pts.reduce((a, p) => a + p[1], 0) / pts.length)}</b></span><span class="muted">新发地「${esc(b.xfd)}${b.spec ? '（' + esc(b.spec) + '）' : ''}」</span></div>
+    ${lineChart([{ name: b.name, color: 'var(--s1)', points: pts }], { height: 200, fmt: v => yuan(v), unit: ' 元/斤', xfmt: (d, full) => full ? d : md(d) })}`;
+}
+function viewPrices() {
+  const q = state.q;
+  const rows = GROUPS.map(g => {
+    const items = D.basket.filter(b => b.group === g && (!q || (b.name + b.xfd).toLowerCase().includes(q))).map(b => ({ b, s: stat(b.id) })).filter(x => x.s);
+    if (!items.length) return '';
+    return `<tr class="grp"><td colspan="6">${g}</td></tr>${items.map(({ b, s }) => {
+      const staleDays = Math.round((new Date(D.today) - new Date(s.lastDay)) / 86400e3);
+      const open = state.open === b.id;
+      return `<tr class="row ${open ? 'open' : ''}" data-open="${b.id}"><td>${esc(b.name)}${staleDays > 3 ? `<span class="stale">${md(s.lastDay)}</span>` : ''}</td>
+        <td class="price">${yuan(s.last)}</td><td class="${cls(s.d1)} hide-m">${pct(s.d1)}</td><td class="${cls(s.d7)}">${pct(s.d7)}</td><td class="${cls(s.d30)}">${pct(s.d30)}</td>
+        <td class="spark">${sparkline(series(b.id).slice(-90), innerWidth < 860 ? 72 : 110, 26)}</td></tr>
+        ${open ? `<tr class="detail"><td colspan="6">${priceDetail(b)}</td></tr>` : ''}`;
+    }).join('')}`;
+  }).join('');
+  return `<div class="main-head"><div><h1>🥩 今日菜价</h1><p>北京新发地批发市场每日均价，单位元 / 斤；点一行看走势</p></div>
+      <div class="tabs">${[30, 90, 365].map(n => `<button class="tab ${state.range === n ? 'active' : ''}" data-range="${n}">${n === 365 ? '1 年' : n + ' 天'}</button>`).join('')}</div></div>
+    ${rows ? `<div class="card" style="overflow:hidden"><table class="ptable"><thead><tr><th>品种</th><th>今日价</th><th class="hide-m">较昨日</th><th>较 7 天前</th><th>较 30 天前</th><th>近 90 天</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="card empty">没有匹配的品种</div>'}
+    <p class="note">批发价一般比超市、菜市场零售价低三到五成。灰色日期表示该品种近几天没有报价（季节性品种）。走势图的历史从 2026 年 7 月开始，之后每天累积。</p>`;
+}
+
+// ── 视图：全国行情 ──
+function viewNational() {
+  const rank = D.rank.filter(r => !state.q || r.name.toLowerCase().includes(state.q));
+  const up = rank.filter(r => r.chg > 0).sort((a, b) => b.chg - a.chg), down = rank.filter(r => r.chg < 0).sort((a, b) => a.chg - b.chg);
+  const jin = r => r.unit === '元/公斤' && r.price != null ? r.price / 2 : r.price;
+  const row = (r, i) => `<div class="rank-row"><span class="n">${i + 1}</span><span class="l">${esc(r.name)}</span><span class="p">${yuan(jin(r))} 元/斤</span><span class="c ${cls(r.chg)}">${pct(r.chg)}</span></div>`;
+  const hist = D.moa_index_hist, names = Object.keys(hist);
+  const main = ['农产品批发价格200指数', '“菜篮子”产品批发价格指数'].filter(n => hist[n] && Object.keys(hist[n]).length >= 2);
+  const days = [...new Set(main.flatMap(n => Object.keys(hist[n])))].sort();
+  return `<div class="main-head"><div><h1>🇨🇳 全国行情</h1><p>农业农村部全国农产品批发市场价格信息系统，每天更新</p></div></div>
+    <div class="section-title"><b>批发价格指数</b><span>${D.moa_index_today[0] ? D.moa_index_today[0].date + ' · 和前一天比' : ''}</span></div>
+    <div class="idx-grid">${D.moa_index_today.map(x => { const ch = x.prev ? (x.value / x.prev - 1) * 100 : null;
+      return `<div class="card idx"><div class="k">${esc(x.name)}</div><div class="v">${x.value.toFixed(2)}</div><div class="s ${cls(ch)}">${pct(ch)}</div></div>`; }).join('')}</div>
+    ${days.length >= 3 ? `<div class="card chart-card" style="margin-top:12px"><div class="legend">${main.map((n, i) => `<span><i style="background:var(--s${i + 1})"></i>${esc(n.replace(/[“”]/g, ''))}</span>`).join('')}</div>
+      ${lineChart(main.map((n, i) => ({ name: n.replace(/[“”]/g, ''), color: `var(--s${i + 1})`, points: days.map(d => [d, hist[n][d] ?? null]) })), { height: 200, fmt: v => v.toFixed(1), xfmt: (d, full) => full ? d : md(d) })}</div>`
+      : '<p class="note">指数走势从上线当天开始每天累积，攒够几天后这里会出现走势图。</p>'}
+    <div class="section-title"><b>今日全国涨跌榜</b><span>全国批发均价，和前一天比（已换算为元 / 斤）</span></div>
+    <div class="two"><div class="card">${up.map(row).join('') || '<div class="empty">暂无</div>'}</div><div class="card">${down.map(row).join('') || '<div class="empty">暂无</div>'}</div></div>
+    <p class="note">榜单每天只给涨跌幅最大的 20 个品种，所以猪肉、鸡蛋不一定在榜上；单品走势见「今日菜价」。</p>`;
+}
+
+// ── 视图：CPI ──
+function viewCPI() {
+  const months = Object.keys(D.cpi).slice(-24), m = months.at(-1), c = D.cpi[m] || {};
+  const lines = CPI_LINES.map(([k, color]) => ({ name: CPI_NAME[k], color, points: months.map(mm => [mm, D.cpi[mm][k]?.yoy ?? null]) }));
+  const keys = ['cpi', 'food', 'core', 'pork', 'beef', 'mutton', 'egg', 'veg', 'fruit', 'aquatic', 'grain', 'oil'].filter(k => c[k]);
+  const maxAbs = Math.max(...keys.map(k => Math.abs(c[k].yoy)), 1);
+  return `<div class="main-head"><div><h1>📊 CPI 居民消费价格</h1><p>国家统计局每月中旬发布；同比 = 和去年同月比</p></div>
+      <button class="btn tab" id="cpiTable">${state.cpiTable ? '看图' : '看表格'}</button></div>
+    ${state.cpiTable ? cpiTable(months) : `<div class="card chart-card"><div class="legend">${lines.map(l => `<span><i style="background:${l.color}"></i>${esc(l.name)}</span>`).join('')}</div>
+      ${lineChart(lines, { height: 260, zero: true, fmt: (v, full) => (v > 0 ? '+' : '') + v.toFixed(full ? 1 : 0) + '%', xfmt: (mm, full) => full ? `${mm.slice(0, 4)} 年 ${+mm.slice(5)} 月` : ym(mm) })}</div>`}
+    ${cpiSay(m, c)}
+    <div class="section-title"><b>${m ? `${+m.slice(5)} 月各品类同比` : ''}</b><span>中线为 0，右边是涨、左边是跌</span></div>
+    <div class="card bars">${keys.map(k => { const v = c[k].yoy, w = Math.abs(v) / maxAbs * 50;
+      return `<div class="bar-row" title="环比 ${pct(c[k].mom)}"><span class="lab">${CPI_NAME[k]}</span><span class="track"><span class="fill" style="${v >= 0 ? `left:50%` : `left:${50 - w}%`};width:${Math.max(w, 0.5)}%;background:${v >= 0 ? 'var(--up)' : 'var(--down)'}"></span></span><span class="val ${cls(v)}">${pct(v)}</span></div>`; }).join('')}</div>
+    ${c.url ? `<p class="note">来源：<a href="${esc(c.url)}" target="_blank" rel="noopener" style="text-decoration:underline">国家统计局 · ${m.slice(0, 4)} 年 ${+m.slice(5)} 月居民消费价格公报</a></p>` : ''}`;
+}
+function cpiTable(months) {
+  const ks = ['cpi', 'food', 'pork', 'veg', 'egg', 'fruit', 'beef'];
+  return `<div class="card scroll-x"><table class="ctable"><thead><tr><th>月份（同比）</th>${ks.map(k => `<th>${CPI_NAME[k]}</th>`).join('')}</tr></thead>
+    <tbody>${[...months].reverse().map(mm => `<tr><td>${mm}</td>${ks.map(k => { const v = D.cpi[mm][k]?.yoy; return `<td class="${cls(v)}">${v == null ? '—' : (v > 0 ? '+' : '') + v.toFixed(1) + '%'}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+
+// ── 导航、右栏 ──
+const VIEWS = { home: '🏠 概览', prices: '🥩 今日菜价', national: '🇨🇳 全国行情', cpi: '📊 CPI' };
+const RENDER = { home: viewHome, prices: viewPrices, national: viewNational, cpi: viewCPI };
+function renderAside() {
+  const SRC = { xinfadi: '北京新发地', index: '农业农村部 · 指数', rank: '农业农村部 · 涨跌榜', cpi: '国家统计局 · CPI' };
+  const lastDay = Object.values(D.xinfadi).map(h => Object.keys(h).at(-1)).filter(Boolean).sort().at(-1);
+  $('#aside').innerHTML = `
+    <div class="card widget"><h3>🛒 常买的几样</h3>${['pork_lean', 'egg', 'tomato', 'potato', 'cucumber', 'apple'].map(id => { const b = D.basket.find(x => x.id === id), s = stat(id); return b && s ? `<div class="w-row" style="cursor:pointer" data-open="${id}"><span class="l">${esc(b.name)}</span><span class="r">${yuan(s.last)} 元/斤 <span class="${cls(s.d7)}">${pct(s.d7)}</span></span></div>` : ''; }).join('')}</div>
+    <div class="card widget"><h3>🛰 数据来源</h3>${Object.entries(D.sources).map(([k, s]) => `<div class="w-row"><span class="l"><i class="st-dot ${s.ok ? '' : s.stale ? 'stale' : 'bad'}"></i>${SRC[k] || k}</span><span class="r">${s.ok ? '正常' : s.stale ? '旧数据' : '失败'}</span></div>`).join('')}
+      ${lastDay ? `<div class="w-row"><span class="l">新发地最新报价日</span><span class="r">${lastDay}</span></div>` : ''}</div>
+    <div class="card widget"><h3>ℹ️ 说明</h3><p class="w-note">单品价格是北京新发地批发市场的日均价（元 / 斤），代表北京批发行情；全国情况看「全国行情」和 CPI。批发价一般比零售价低三到五成。每天北京时间 09:00 更新。</p></div>`;
+}
+function render() {
+  if (!D) return;
+  if (!RENDER[state.view]) state.view = 'home';
+  $('#nav').innerHTML = Object.entries(VIEWS).map(([k, v]) => `<button class="nav-item ${state.view === k ? 'active' : ''}" data-go="${k}">${v}</button>`).join('');
+  $('#main').innerHTML = RENDER[state.view]();
+  renderAside();
+}
+
+// ── 交互 ──
+document.addEventListener('click', e => {
+  const go = e.target.closest('[data-go]');
+  if (go) { state.view = go.dataset.go; store.set('view', state.view); render(); window.scrollTo({ top: 0 }); return; }
+  const op = e.target.closest('[data-open]');
+  if (op) {
+    const id = op.dataset.open;
+    if (state.view !== 'prices') { state.view = 'prices'; store.set('view', 'prices'); state.open = id; render(); document.querySelector(`tr.row[data-open="${id}"]`)?.scrollIntoView({ block: 'center' }); return; }
+    state.open = state.open === id ? null : id; render(); return;
+  }
+  const rg = e.target.closest('[data-range]');
+  if (rg) { state.range = +rg.dataset.range; store.set('range', state.range); render(); return; }
+  if (e.target.closest('#cpiTable')) { state.cpiTable = !state.cpiTable; render(); }
+});
+$('#q').addEventListener('input', e => { state.q = e.target.value.trim().toLowerCase(); if (state.q && state.view === 'home') state.view = 'prices'; render(); });
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#q').focus(); }
+  if (e.key === 'Escape' && document.activeElement === $('#q')) { $('#q').value = ''; state.q = ''; render(); $('#q').blur(); }
+});
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $('#theme').textContent = t === 'light' ? '☀' : '☾';
+}
+applyTheme(store.get('theme', 'dark'));
+$('#theme').onclick = () => { const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'; store.set('theme', t); applyTheme(t); };
+
+async function load() {
+  const btn = $('#reload');
+  btn.classList.add('spin');
+  try {
+    const r = await fetch('data.json', { cache: 'no-cache' });
+    if (!r.ok) throw new Error(r.status);
+    D = await r.json();
+    $('#updated').textContent = '更新于 ' + ago(D.updated);
+    render();
+  } catch (err) {
+    console.warn('[FoodPrices]', err);
+    if (!D) $('#main').innerHTML = `<div class="card empty">数据读取失败（${esc(err.message)}），稍后点右上角 ↻ 重试</div>`;
+  } finally {
+    btn.classList.remove('spin');
+  }
+}
+$('#reload').onclick = load;
+load();
+setInterval(() => { if (D) $('#updated').textContent = '更新于 ' + ago(D.updated); }, 60 * 1000);
+</script>
+</body>
+</html>
