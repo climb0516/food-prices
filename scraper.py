@@ -126,6 +126,23 @@ def pick(rows, name, spec):
         by_day.setdefault(r["pubDate"][:10], []).append(p)
     return {d: round(sum(v) / len(v), 2) for d, v in by_day.items()}
 
+def pick_meta(rows, name, spec):
+    """最近一个报价日的最低 / 最高价和产地（多个规格时取最低的低价、最高的高价，产地去重合并）。"""
+    rs = [r for r in rows if r.get("prodName") == name and r.get("unitInfo") == "斤"
+          and (spec is None or (r.get("specInfo") or "") == spec) and (num(r.get("avgPrice")) or 0) > 0]
+    if not rs:
+        return None
+    day = max(r["pubDate"][:10] for r in rs)
+    rs = [r for r in rs if r["pubDate"][:10] == day]
+    lows = [v for v in (num(r.get("lowPrice")) for r in rs) if v and v > 0]
+    highs = [v for v in (num(r.get("highPrice")) for r in rs) if v and v > 0]
+    places = []
+    for r in rs:
+        for c in (r.get("place") or "").strip():
+            if c not in places and c.strip() and c not in "\\/、,，":
+                places.append(c)
+    return {"date": day, "low": min(lows) if lows else None, "high": max(highs) if highs else None, "place": "".join(places)}
+
 def xinfadi(prev_hist):
     hist = {k: dict(v) for k, v in prev_hist.items()}
     # 每天查最近 7 天的全部报价（补上漏抓的日子），新品种单独回补 90 天
@@ -140,14 +157,20 @@ def xinfadi(prev_hist):
         except Exception as e:
             print(f"    回补 {b[1]} 失败：{e}")
         time.sleep(1)
+    meta = {}
     for b in BASKET:
         hist.setdefault(b[0], {}).update(pick(recent, b[3], b[4]))
+        m = pick_meta(recent, b[3], b[4])
+        if m:
+            meta[b[0]] = m
     cut = (TODAY - timedelta(days=KEEP_DAYS)).isoformat()
     for k in hist:
         hist[k] = dict(sorted((d, p) for d, p in hist[k].items() if d >= cut))
     xinfadi.backfilled = len(jobs)
+    xinfadi.meta = meta
     return hist
 xinfadi.backfilled = 0
+xinfadi.meta = {}
 
 # ── 农业农村部 ────────────────────────────────────────────────────────────────
 
@@ -258,15 +281,31 @@ def main():
     cut = (TODAY - timedelta(days=KEEP_DAYS)).isoformat()
     idx_hist = {k: dict(sorted((d, v) for d, v in h.items() if d >= cut)) for k, h in idx_hist.items()}
 
+    # 全国涨跌榜：同样按天累积每个上榜品种的均价（元/斤，接口只给当天和前一天）
+    rank_hist = {k: dict(v) for k, v in (prev.get("rank_hist") or {}).items()}
+    for x in val["rank"] or []:
+        k = 0.5 if x.get("unit") == "元/公斤" else 1
+        h = rank_hist.setdefault(x["name"], {})
+        if x.get("price") is not None and x.get("date"):
+            h[x["date"]] = round(x["price"] * k, 3)
+            if x.get("last") is not None:
+                h.setdefault((date.fromisoformat(x["date"]) - timedelta(days=1)).isoformat(), round(x["last"] * k, 3))
+    rank_hist = {k: dict(sorted((d, v) for d, v in h.items() if d >= cut)) for k, h in rank_hist.items()}
+
+    # 新发地最近报价日的高低价、产地：本次没抓到的品种沿用上次
+    xfd_meta = {**(prev.get("xinfadi_meta") or {}), **xinfadi.meta}
+
     data = {
         "updated": NOW.isoformat(timespec="seconds"),
         "today": TODAY.isoformat(),
         "sources": sources,
         "basket": [{"id": b[0], "name": b[1], "group": b[2], "xfd": b[3], "spec": b[4] or ""} for b in BASKET],
         "xinfadi": val["xinfadi"] or {},
+        "xinfadi_meta": xfd_meta,
         "moa_index_today": val["index"] or [],
         "moa_index_hist": idx_hist,
         "rank": val["rank"] or [],
+        "rank_hist": rank_hist,
         "cpi": val["cpi"] or {},
     }
     OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), "utf-8")
